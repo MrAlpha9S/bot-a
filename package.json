@@ -14,6 +14,10 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.18.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "msnodesqlv8": "^4.5.0",
+    "mssql": "^11.0.1",
+    "mysql2": "^3.12.0",
+    "odbc": "^2.4.9"
   }
 }
