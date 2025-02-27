@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-var conn = require('../../connect.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
