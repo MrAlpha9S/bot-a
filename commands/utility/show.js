@@ -1,40 +1,65 @@
 const { EmbedBuilder, SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 const path = require('path');
+const { conn } = require('../../connect.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('show')
-		// .addStringOption(option =>
-		// 	option.setName('id')
-		// 		.setDescription('Input CardID'))
+		.addStringOption(option =>
+			option.setName('id')
+				.setDescription('Input CardID')
+				.setRequired(true)) // Mark the option as required		
 	    .setDescription('Show Card information.'),
 	async execute(interaction) {
+        //const id = conn.escape(interaction.options.getString('id'));
 		const id = interaction.options.getString('id');
+        
+		// Sanitize input to prevent SQL injection
+		const sanitizedId = conn.escape(id);
 
-		const picPath = path.join(__dirname, '../../pic/PR00001.jpg');
+		conn.query(`SELECT * FROM Cards 
+					INNER JOIN Passive p  ON p.PassiveID = Cards.PassiveID
+					INNER JOIN Skill s  ON s.SkillID = Cards.Skill1 OR s.SkillID = Cards.Skill2 
+					WHERE cardID = ${sanitizedId};`, function (err, results, fields) {
+
+			if (err) {
+				console.error(err);
+				return interaction.reply('An error occurred while fetching the card information.');
+			}
+
+			if (results.length === 0) {
+				return interaction.reply('No card found with the provided ID.');
+			}
+
+			const card = results[0];
+			const card1 = results[1];
+
+		const picPath = path.join(__dirname, `../../pic/${card.picID}.jpg`);
 		const iconPath = path.join(__dirname, '../../pic/icon.jpg');
 		const picAttachment = new AttachmentBuilder(picPath);
 		const iconAttachment = new AttachmentBuilder(iconPath);
 
 		const embed = new EmbedBuilder()
 		.setColor(0xFFFFFF)
-		.setTitle('Name')
-		.setDescription('Some description here')
+		.setTitle(`${card.name}`)
+		.setDescription(`Card ID: ${card.cardID}`)
 		.setThumbnail('attachment://icon.jpg')
 		.addFields(
-			{ name: 'Passive:', value: 'Some value here' },
-			{ name: 'PAC ', value: '', inline: true },
-			{ name: 'SHO ', value: '', inline: true },
-			{ name: 'PAS ', value: '', inline: true },
-			{ name: 'DRI ', value: '', inline: true },
-			{ name: 'DEF ', value: '', inline: true },
-			{ name: 'PHY ', value: '', inline: true },
+			{ name: `Passive: ${card.PassiveName}`, value: `${card.PassiveDescription}` },
+			{ name: `PAC ${card.PAC}`, value: ``, inline: true },
+			{ name: `SHO ${card.SHO}`, value: ``, inline: true },
+			{ name: `PAS ${card.PAS}`, value: ``, inline: true },
+			{ name: `DRI ${card.DRI}`, value: ``, inline: true },
+			{ name: `DEF ${card.DEF}`, value: ``, inline: true },
+			{ name: `PHY ${card.PHY}`, value: ``, inline: true },
+			{ name: '\u200B', value: '\u200B' },
 		)
-		.addFields({ name: 'Skill 1:', value: 'Some value here', inline: true })
-		.addFields({ name: 'Skill 2:', value: 'Some value here', inline: true })
-		.setImage('attachment://PR00001.jpg') // Use the attachment name here
+		.addFields({ name: `Skill 1: ${card.SkillName}`, value: `${card.SkillDescription}`, inline: false })
+		.addFields({ name: `Skill 2: ${card1.SkillName}`, value: `${card1.SkillDescription}`, inline: false })
+		.setImage(`attachment://${card.picID}.jpg`) // Use the attachment name here
 		.setTimestamp();
 
-		await interaction.reply({ embeds: [embed], files: [picAttachment, iconAttachment] });
+		interaction.reply({ embeds: [embed], files: [picAttachment, iconAttachment] });
+});
 	},
 };
