@@ -11,10 +11,8 @@ module.exports = {
 				.setRequired(true)) // Mark the option as required		
 	    .setDescription('Show Card information.'),
 	async execute(interaction) {
-        //const id = conn.escape(interaction.options.getString('id'));
+		
 		const id = interaction.options.getString('id');
-        
-		// Sanitize input to prevent SQL injection
 		const sanitizedId = conn.escape(id);
 
 		conn.query(`SELECT * FROM Cards 
@@ -54,8 +52,8 @@ module.exports = {
 			{ name: `PHY ${card.PHY}`, value: ``, inline: true },
 			{ name: '\u200B', value: '\u200B' },
 		)
-		.addFields({ name: `Skill 1: ${card.SkillName}`, value: `${card.SkillDescription}`, inline: false })
-		.addFields({ name: `Skill 2: ${card1.SkillName}`, value: `${card1.SkillDescription}`, inline: false })
+		.addFields({ name: `Skill 1: ${card.SkillName}`, value: `${card.SkillDescription}. Cost ${card.SkillCost}`, inline: false })
+		.addFields({ name: `Skill 2: ${card1.SkillName}`, value: `${card1.SkillDescription}. Cost ${card.SkillCost}`, inline: false })
 		.setImage(`attachment://${card.picID}.jpg`) // Use the attachment name here
 		.setTimestamp();
 
