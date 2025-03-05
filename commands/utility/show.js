@@ -32,7 +32,7 @@ module.exports = {
 			const card = results[0];
 			const card1 = results[1];
 
-		const picPath = path.join(__dirname, `../../pic/${card.picID}.jpg`);
+		const picPath = path.join(__dirname, `../../pic/${card.cardID}.jpg`);
 		const iconPath = path.join(__dirname, '../../pic/icon.jpg');
 		const picAttachment = new AttachmentBuilder(picPath);
 		const iconAttachment = new AttachmentBuilder(iconPath);
@@ -54,7 +54,7 @@ module.exports = {
 		)
 		.addFields({ name: `Skill 1: ${card.SkillName}`, value: `${card.SkillDescription}. Cost ${card.SkillCost}`, inline: false })
 		.addFields({ name: `Skill 2: ${card1.SkillName}`, value: `${card1.SkillDescription}. Cost ${card.SkillCost}`, inline: false })
-		.setImage(`attachment://${card.picID}.jpg`) // Use the attachment name here
+		.setImage(`attachment://${card.cardID}.jpg`) // Use the attachment name here
 		.setTimestamp();
 
 		interaction.reply({ embeds: [embed], files: [picAttachment, iconAttachment] });
