@@ -17,7 +17,7 @@ for (const folder of commandFolders) {
 		const command = require(filePath);
 	
 		if ('data' in command && 'execute' in command) {
-            console.log(`[INFO] Loaded command ${command.data.name} from ${filePath}`);
+            //console.log(`[INFO] Loaded command ${command.data.name} from ${filePath}`);
 			client.commands.set(command.data.name, command);
 		} else {
 			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
