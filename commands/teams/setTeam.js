@@ -3,8 +3,8 @@ const { conn, sql } = require('../../connect.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('team')
-		.setDescription('Team information.'),
+		.setName('setteam')
+		.setDescription('Set your team!'),
 	async execute(interaction) {
 		const id = interaction.user.id;
 

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const commands = [];
+const commandNames = new Set(); // Track command names to detect duplicates
 // Grab all the command folders from the commands directory you created earlier
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -17,7 +18,12 @@ for (const folder of commandFolders) {
 		const filePath = path.join(commandsPath, file);
 		const command = require(filePath);
 		if ('data' in command && 'execute' in command) {
-			commands.push(command.data.toJSON());
+			if (commandNames.has(command.data.name)) {
+				console.log(`[WARNING] Duplicate command name detected: "${command.data.name}" in file ${filePath}`);
+			} else {
+				commands.push(command.data.toJSON());
+				commandNames.add(command.data.name); // Add command name to the set
+			}
 		} else {
 			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}

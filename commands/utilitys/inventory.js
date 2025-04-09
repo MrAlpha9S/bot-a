@@ -56,7 +56,7 @@ module.exports = {
 
 				currentCards.forEach((card) => {
 					embed.addFields({ 
-						name: `Card ID: ${card.cardID}, Name: ${card.name}, Sell Value: ${card.sell}`, 
+						name: `ID: ${card.cardID}, Name: ${card.name}, Amount: ${card.amount}, Sell: ${card.sell}`, 
 						value: '', 
 						inline: false 
 					});
