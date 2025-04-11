@@ -34,6 +34,7 @@ module.exports = {
 			}
 
 			const results = result.recordset[0];
+			const name1 = results.name1;
 
 			// Create embed message
 			const embed = new EmbedBuilder()
@@ -41,9 +42,9 @@ module.exports = {
 				.setTitle(`${user.username}'s Team`)
 				.setThumbnail(avatarURL)
 				.addFields(
-					{ name: `===============`, value: ``, inline: false },
-					{ name: `===============`, value: ``, inline: true },
-					{ name: `===============`, value: ``, inline: true },
+					{ name: `===========Barou===========`, value: ``, inline: false },
+					{ name: `====Lorenzo======Snuffy====`, value: ``, inline: false },
+					{ name: `===========================`, value: ``, inline: false },
 				)
 				.setFooter({ text: `ID: ${id}` });
 

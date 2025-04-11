@@ -1,15 +1,16 @@
-const { EmbedBuilder, SlashCommandBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const path = require('path');
 const { conn, sql } = require('../../connect.js');
 
+
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('inventory')
-		.setDescription('Show inventory.'),	
+	data: {
+		name: 'viewInventory',
+		description: 'View your inventory',
+	},
 
 	async execute(interaction) {
 		const user = interaction.user;
-		const userid = interaction.user.id;
 		const pageSize = 10; // Number of cards per page
 
 		try {
@@ -27,7 +28,7 @@ module.exports = {
 			`;
 
 			await ps.prepare(query);
-			const result = await ps.execute({ userid: userid });
+			const result = await ps.execute({ userid: user.id });
 			await ps.unprepare();
 
 			if (!result.recordset.length) {
@@ -55,10 +56,10 @@ module.exports = {
 					.addFields({ name: `Currency: ${cards[0].currency}`, value: '' });
 
 				currentCards.forEach((card) => {
-					embed.addFields({ 
-						name: `ID: ${card.cardID}, Name: ${card.name}, Amount: ${card.amount}, Sell: ${card.sell}`, 
-						value: '', 
-						inline: false 
+					embed.addFields({
+						name: `ID: ${card.cardID}, Name: ${card.name}, Amount: ${card.amount}, Sell: ${card.sell}`,
+						value: '',
+						inline: false
 					});
 				});
 
@@ -77,23 +78,38 @@ module.exports = {
 						.setCustomId('next')
 						.setLabel('Next ➡️')
 						.setStyle(ButtonStyle.Primary)
-						.setDisabled(currentPage === totalPages - 1)
+						.setDisabled(currentPage === totalPages - 1),
+					new ButtonBuilder()
+						.setCustomId('show')
+						.setLabel('Show Cards')
+						.setStyle(ButtonStyle.Primary)
 				);
 			};
 
 			// Send initial embed
 			const embed = createEmbed(currentPage);
-			const message = await interaction.reply({ embeds: [embed], components: [createButtons()], fetchReply: true });
+
+			await interaction.reply({ embeds: [embed], components: [createButtons()]});
 
 			// Create a button interaction collector
-			const filter = (i) => i.user.id === userid;
-			const collector = message.createMessageComponentCollector({ filter, time: 60000 });
+			const filter = i => i.user.id === interaction.user.id;
+			const collector = interaction.channel.createMessageComponentCollector({ 
+				ComponentType: ComponentType.Button,
+				filter, 
+				time: 30_000,
+				withResponse: true,
+			 });
 
-			collector.on('collect', async (i) => {
+			collector.on('collect', async i => {
+				
 				if (i.customId === 'prev' && currentPage > 0) {
 					currentPage--;
 				} else if (i.customId === 'next' && currentPage < totalPages - 1) {
 					currentPage++;
+				} else if (i.customId === 'show') {
+					collector.stop();
+					const showEmbed = require('../../data/embeds/showEmbed.js');
+					return await showEmbed.execute(i);
 				}
 
 				const updatedEmbed = createEmbed(currentPage);
@@ -101,11 +117,10 @@ module.exports = {
 			});
 
 			collector.on('end', async () => {
-				await message.edit({ components: [] }); // Remove buttons when interaction times out
+				return await interaction.editReply({ components: [] }); // Remove buttons when interaction times out
 			});
 		} catch (err) {
 			console.error('Error executing command:', err);
-			await interaction.reply({ content: 'An unexpected error occurred. Please try again later.', ephemeral: true });
 		}
 	}
 };
