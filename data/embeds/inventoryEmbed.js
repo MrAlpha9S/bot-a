@@ -89,7 +89,7 @@ module.exports = {
 			// Send initial embed
 			const embed = createEmbed(currentPage);
 
-			await interaction.reply({ embeds: [embed], components: [createButtons()]});
+			await interaction.update({ embeds: [embed], components: [createButtons()]});
 
 			// Create a button interaction collector
 			const filter = i => i.user.id === interaction.user.id;
@@ -107,7 +107,6 @@ module.exports = {
 				} else if (i.customId === 'next' && currentPage < totalPages - 1) {
 					currentPage++;
 				} else if (i.customId === 'show') {
-					collector.stop();
 					const showEmbed = require('../../data/embeds/showEmbed.js');
 					return await showEmbed.execute(i);
 				}
@@ -117,7 +116,7 @@ module.exports = {
 			});
 
 			collector.on('end', async () => {
-				return await interaction.editReply({ components: [] }); // Remove buttons when interaction times out
+				return await interaction.editReply({ content: 'TimeOut!', components: [] }); // Remove buttons when interaction times out
 			});
 		} catch (err) {
 			console.error('Error executing command:', err);

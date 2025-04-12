@@ -79,7 +79,7 @@ module.exports = {
 			const row = new ActionRowBuilder().addComponents(selectPlayer);
 
 
-			await interaction.reply({
+			await interaction.update({
 				content: `Choose a player (Page ${currentPage + 1} / ${totalPages})`,
 				embeds: [], // Clear all embeds
 				components: [row], // Add the select menu row
@@ -133,9 +133,7 @@ module.exports = {
 			});
 
 			collector.on('end', async () => {
-				console.log('Collector ended');
-				// Clear components when the collector ends
-				await interaction.editReply({ content: 'Collector ended!', components: [] });
+				await interaction.editReply({ content: 'TimeOut!', components: [] });
 			});
 		} catch (error) {
 			console.log(error);

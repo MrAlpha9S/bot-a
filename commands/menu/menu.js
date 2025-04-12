@@ -49,13 +49,12 @@ module.exports = {
 
             collector.on('collect', async i => {
                 if (i.customId === 'inventory') {
-                    collector.stop(); // Stop the collector after timeout
                     const inventoryEmbed = require('../../data/embeds/inventoryEmbed.js');
                     return await inventoryEmbed.execute(i);
                 }
             });
             collector.on('end', collected => {
-                interaction.editReply({components: [] }); // Disable buttons after timeout
+                interaction.editReply({content: 'TimeOut!', components: [] }); // Disable buttons after timeout
             });
         } catch (error) {
             console.error('Error executing command:', error);
