@@ -2,6 +2,7 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentTyp
 const path = require('path');
 const { conn, sql } = require('../../connect.js');
 
+const showEmbedCooldown = new Set();
 
 module.exports = {
 	data: {
@@ -10,6 +11,7 @@ module.exports = {
 	},
 
 	async execute(interaction) {
+		const id = interaction.user.id;
 		const user = interaction.user;
 		const pageSize = 10; // Number of cards per page
 
@@ -89,24 +91,31 @@ module.exports = {
 			// Send initial embed
 			const embed = createEmbed(currentPage);
 
-			await interaction.update({ embeds: [embed], components: [createButtons()]});
+			var reply = await interaction.update({ embeds: [embed], components: [createButtons()] });
 
 			// Create a button interaction collector
 			const filter = i => i.user.id === interaction.user.id;
-			const collector = interaction.channel.createMessageComponentCollector({ 
+			const collector = reply.createMessageComponentCollector({
 				ComponentType: ComponentType.Button,
-				filter, 
-				time: 30_000,
-				withResponse: true,
-			 });
+				filter,
+				time: 60_000,
+			});
 
 			collector.on('collect', async i => {
-				
+
 				if (i.customId === 'prev' && currentPage > 0) {
 					currentPage--;
 				} else if (i.customId === 'next' && currentPage < totalPages - 1) {
 					currentPage++;
 				} else if (i.customId === 'show') {
+
+					if (showEmbedCooldown.has(id)) {
+						return i.update({ content: 'You are on cooldown. Please wait before using this again.' });
+					}
+					showEmbedCooldown.add(id);
+                    setTimeout(() => showEmbedCooldown.delete(id), 30_000);
+
+					collector.stop(); // Stop the collector to prevent multiple interactions
 					const showEmbed = require('../../data/embeds/showEmbed.js');
 					return await showEmbed.execute(i);
 				}
@@ -116,7 +125,7 @@ module.exports = {
 			});
 
 			collector.on('end', async () => {
-				return await interaction.editReply({ content: 'TimeOut!', components: [] }); // Remove buttons when interaction times out
+				const disabledButtons = createButtons().components.map(button => button.setDisabled(true));
 			});
 		} catch (err) {
 			console.error('Error executing command:', err);

@@ -14,6 +14,7 @@ module.exports = {
 
 	async execute(interaction) {
 		const id = interaction.user.id;
+
 		try {
 			const pool = await conn;
 			if (!pool) throw new Error("Database connection failed");
@@ -78,19 +79,16 @@ module.exports = {
 			const selectPlayer = buildSelectPlayer(currentPage);
 			const row = new ActionRowBuilder().addComponents(selectPlayer);
 
-
-			await interaction.update({
+			var reply = await interaction.update({
 				content: `Choose a player (Page ${currentPage + 1} / ${totalPages})`,
-				embeds: [], // Clear all embeds
 				components: [row], // Add the select menu row
 			});
 
 			const filter = i => i.user.id === interaction.user.id;
 
-			const collector = interaction.channel.createMessageComponentCollector({
+			const collector = reply.createMessageComponentCollector({
 				filter,
-				time: 60_000,
-				withResponse: true,
+				time: 30_000,
 				componentType: ComponentType.StringSelect,
 			});
 
@@ -111,13 +109,13 @@ module.exports = {
 					const picAttachment = new AttachmentBuilder(picPath);
 					const iconAttachment = new AttachmentBuilder(iconPath);
 
-					await i.update({
+					return await i.update({
 						content: `Choose a player (Page ${currentPage + 1} / ${totalPages})`,
 						embeds: [embed], // Add the embed with card data
 						components: [row],
 						files: [picAttachment, iconAttachment], // Attach the images
 					});
-					return;
+					
 				}
 
 				const newSelectPlayer = buildSelectPlayer(currentPage);
@@ -133,7 +131,7 @@ module.exports = {
 			});
 
 			collector.on('end', async () => {
-				await interaction.editReply({ content: 'TimeOut!', components: [] });
+				await interaction.editReply({ content: 'Collector ended!', components: [] });
 			});
 		} catch (error) {
 			console.log(error);

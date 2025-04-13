@@ -22,7 +22,7 @@ client.client.on(Events.InteractionCreate, async interaction => {
 		return;
 	}
 
-	const cooldownTime = 30 * 1000; // 30 seconds in ms
+	const cooldownTime = 10 * 1000; // 10 seconds in ms
     const userId = interaction.user.id;
 
 	// Check if user is on cooldown

@@ -35,14 +35,14 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: `${userid}`, iconURL: avatarURL });
 
-            await interaction.reply({ embeds: [embed], components: [rowMain] });
+            var reply = await interaction.reply({ embeds: [embed], components: [rowMain] });
 
 
             const filter = i => i.user.id === interaction.user.id;
 
-            const collector = interaction.channel.createMessageComponentCollector({
+            const collector = reply.createMessageComponentCollector({
                 ComponentType: ComponentType.Button,
-                time: 30_000,
+                time: 60_000,
                 filter,
                 withResponse: true,
             });
@@ -53,8 +53,11 @@ module.exports = {
                     return await inventoryEmbed.execute(i);
                 }
             });
+
             collector.on('end', collected => {
-                interaction.editReply({content: 'TimeOut!', components: [] }); // Disable buttons after timeout
+                // Disable buttons after timeout
+                inventoryButton.setDisabled(true);
+                teamButton.setDisabled(true);
             });
         } catch (error) {
             console.error('Error executing command:', error);
