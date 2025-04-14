@@ -51,6 +51,9 @@ module.exports = {
                 if (i.customId === 'inventory') {
                     const inventoryEmbed = require('../../data/embeds/inventoryEmbed.js');
                     return await inventoryEmbed.execute(i);
+                } else if( i.customId === 'team') {
+                    const teamEmbed = require('../../data/embeds/teamEmbed.js');
+                    return await teamEmbed.execute(i);
                 }
             });
 
@@ -60,8 +63,8 @@ module.exports = {
                 teamButton.setDisabled(true);
             });
         } catch (error) {
-            console.error('Error executing command:', error);
-            //return interaction.reply({ content: 'An error occurred while executing this command at menuEmbed.', ephemeral: true });
+            inventoryButton.setDisabled(true);
+            teamButton.setDisabled(true);
         }
     },
 };

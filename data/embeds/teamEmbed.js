@@ -22,9 +22,10 @@ module.exports = {
             ps.input('userid', sql.VarChar(50));
 
             const query = `
-                SELECT ut.slot, c.name, ut.pos, ut.line FROM UserTeam ut
+                SELECT ut.slot, c.name, ut.pos, ut.line, utt.tatID1, utt.tatID2, utt.tatID3, utt.tatID4, utt.tatID5 FROM UserTeam ut
                 LEFT JOIN Cards c ON ut.cardid = c.cardid
-                WHERE userid = @userid;
+                LEFT JOIN UserTatics utt ON ut.userid = utt.userid
+                WHERE ut.userid = @userid;
             `;
 
             await ps.prepare(query);
@@ -33,7 +34,28 @@ module.exports = {
 
             await ps.unprepare(); // Unprepare immediately after execution
 
+            const psTatics = new sql.PreparedStatement(pool);
+            psTatics.input('tat1', sql.VarChar(7));
+            psTatics.input('tat2', sql.VarChar(7));
+            psTatics.input('tat3', sql.VarChar(7));
+            psTatics.input('tat4', sql.VarChar(7));
+            psTatics.input('tat5', sql.VarChar(7));
+
+            const queryTatics = `
+                SELECT * FROM Tatics tt
+                WHERE tt.taticID = @tat1 OR tt.taticID = @tat2 OR tt.taticID = @tat3 OR tt.taticID = @tat4 OR tt.taticID = @tat5;
+            `;
+
+            await psTatics.prepare(queryTatics);
+
+            const resultTatics = await psTatics.execute({ tat1: `${result.recordset[0].tatID1}`, tat2: `${result.recordset[0].tatID2}`, tat3: `${result.recordset[0].tatID3}`, tat4: `${result.recordset[0].tatID4}`, tat5: `${result.recordset[0].tatID5}` });
+
+            await psTatics.unprepare(); // Unprepare immediately after execution
+
             if (!result.recordset.length) {
+                return interaction.reply({ content: 'Not Found!', ephemeral: true });
+            }
+            if (!resultTatics.recordset.length) {
                 return interaction.reply({ content: 'Not Found!', ephemeral: true });
             }
 
@@ -46,6 +68,11 @@ module.exports = {
             }
 
             const results = result.recordset;
+            const tatics = resultTatics.recordset;
+            // console.log(results.length);
+            if (results.length !== 7) {
+                return interaction.update({ content: 'Something was wrong!', embed: [], components: [] });
+            }
             results.forEach(resultsData => {
                 if (resultsData.line == 1) {
                     const name = resultsData.name.split(' ')[1] + ' ';
@@ -66,17 +93,16 @@ module.exports = {
                 if (resultsData.line == 5) {
                     const name = resultsData.name.split(' ')[1] + ' ';
                     lineData.line5 += name;
-                }            
+                }
             });
 
-            
 
-            // Create embed message
-            const embed = new EmbedBuilder()
+
+            // Create embedline
+            const embedLine = new EmbedBuilder()
                 .setColor(0xFFFFFF)
-                .setTitle(`${user.username}'s Team`)
+                .setTitle(`${user.username}'s Team - Lines`)
                 .setThumbnail(avatarURL)
-                .setDescription(`...`)
                 .addFields(
                     { name: `=====================================`, value: ``, inline: false },
                     { name: `line 5: ${lineData.line5}`, value: ``, inline: false },
@@ -84,11 +110,36 @@ module.exports = {
                     { name: `line 3: ${lineData.line3}`, value: ``, inline: false },
                     { name: `line 2: ${lineData.line2}`, value: ``, inline: false },
                     { name: `line 1: ${lineData.line1}`, value: ``, inline: false },
-                    { name: `=====================================`, value: ``, inline: false },
+                    // { name: `=====================================`, value: ``, inline: false },
                 )
                 .setFooter({ text: `ID: ${id}` });
-
-            await interaction.reply({ embeds: [embed], components: [] });
+            // Create embedSlot
+            const embedSlot = new EmbedBuilder()
+                .setColor(0xFFFFFF)
+                .setTitle(`${user.username}'s Team - Slots`)
+                .setThumbnail(avatarURL)
+                .setFooter({ text: `ID: ${id}` })
+                .addFields({ name: `=====================================`, value: ``, inline: false });
+            results.forEach((row) => {
+                embedSlot.addFields({ name: `Slot: ${row.slot}, Name: ${row.name}, Position: ${row.pos}`, value: ``, inline: false });
+            });
+            //Create embedTatic
+            const embedTatic = new EmbedBuilder()
+                .setColor(0xFFFFFF)
+                .setTitle(`${user.username}'s Team - Tatics`)
+                .setThumbnail(avatarURL)
+                .setFooter({ text: `ID: ${id}` })
+                .addFields({ name: `=====================================`, value: ``, inline: false });
+            tatics.forEach((row) => {
+                embedTatic.addFields({ name: `Tatic: ${row.taticName}, Up: ${row.taticUp}, Down: ${row.taticDown}`, value: ``, inline: false });
+            });
+            
+            
+            var reply = await interaction.update({
+                content: null, // Set content to null to clear it
+                embeds: [embedLine, embedSlot, embedTatic],
+                components: []
+            });
 
         } catch (err) {
             console.error('Error executing command:', err);

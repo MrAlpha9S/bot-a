@@ -128,7 +128,7 @@ module.exports = {
 				const disabledButtons = createButtons().components.map(button => button.setDisabled(true));
 			});
 		} catch (err) {
-			console.error('Error executing command:', err);
+			createButtons().components.forEach(button => button.setDisabled(true));
 		}
 	}
 };
