@@ -1,4 +1,4 @@
-const { EmbedBuilder, ComponentType, StringSelectMenuOptionBuilder, StringSelectMenuBuilder, ActionRowBuilder, AttachmentBuilder } = require('discord.js');
+const { ButtonBuilder, ButtonStyle, ComponentType, StringSelectMenuOptionBuilder, StringSelectMenuBuilder, ActionRowBuilder, AttachmentBuilder } = require('discord.js');
 const path = require('path');
 const { conn, sql } = require('../../connect.js');
 
@@ -37,6 +37,7 @@ module.exports = {
 			const cardsPerPage = 20;
 			let currentPage = 0;
 			const totalPages = Math.ceil(allcards.length / cardsPerPage);
+			
 
 			const buildSelectPlayer = (page) => {
 				const start = page * cardsPerPage;
@@ -77,32 +78,54 @@ module.exports = {
 			};
 
 			const selectPlayer = buildSelectPlayer(currentPage);
-			const row = new ActionRowBuilder().addComponents(selectPlayer);
+
+			const sellButton = new ButtonBuilder()
+						.setCustomId('sell')
+						.setLabel('Sell Card')
+						.setStyle(ButtonStyle.Danger)
+						.setDisabled(true);
+
+			const showRow1 = new ActionRowBuilder().addComponents(selectPlayer);
+			const showRow2 = new ActionRowBuilder().addComponents(sellButton);
 
 			var reply = await interaction.update({
 				content: `Choose a player (Page ${currentPage + 1} / ${totalPages})`,
-				components: [row], // Add the select menu row
+				components: [showRow1, showRow2], // Add the select menu row
 			});
+
+			let cardID = null;
+			let selected = null;
 
 			const filter = i => i.user.id === interaction.user.id;
 
 			const collector = reply.createMessageComponentCollector({
 				filter,
 				time: 30_000,
-				componentType: ComponentType.StringSelect,
+				// componentType: ComponentType.StringSelect,
 			});
 
 			collector.on('collect', async i => {
+         
 
-				const selected = i.values[0];
+				if(i.customId === 'player') {
+					selected = i.values[0];
+				} else if (i.customId === 'sell') {
+					selected = i.customId;
+				}
 
 				if (selected === 'next_page') {
 					if (currentPage < totalPages - 1) currentPage++;
 				} else if (selected === 'prev_page') {
 					if (currentPage > 0) currentPage--;
-				} else {
-					const cardID = selected;
+				} else if (selected === 'sell') {
+					collector.stop(); // Stop the collector when a card is selected
+					const sellEmbed = require('../embeds/sellComfirmEmbed.js');
+					return await sellEmbed.execute(i, cardID);
+				} else {	
+
+				    cardID = selected;
 					embed = await cardEmbed.execute(cardID);
+					sellButton.setDisabled(false);
 
 					const picPath = path.join(__dirname, `../../pic/${cardID}.jpg`);
 					const iconPath = path.join(__dirname, '../../pic/icon.jpg');
@@ -112,7 +135,7 @@ module.exports = {
 					return await i.update({
 						content: `Choose a player (Page ${currentPage + 1} / ${totalPages})`,
 						embeds: [embed], // Add the embed with card data
-						components: [row],
+						components: [showRow1, showRow2],
 						files: [picAttachment, iconAttachment], // Attach the images
 					});
 					
@@ -124,14 +147,13 @@ module.exports = {
 
 				await i.update({
 					content: `Choose a player (Page ${currentPage + 1} / ${totalPages})`,
-					embeds: [embed], // Add the embed with card data
-					components: [updatedRow],
+					components: [updatedRow, showRow2], // Update the select menu row
 				});
 
 			});
 
 			collector.on('end', async () => {
-				await interaction.editReply({ content: 'Collector ended!', components: [] });
+				await interaction.editReply({ components: [] });
 			});
 		} catch (error) {
 			console.log(error);

@@ -23,10 +23,10 @@ module.exports = {
 			ps.input('userid', sql.VarChar(50));
 
 			const query = `
-				SELECT c.cardID, c.name, u.userID, us.amount, u.currency, c.sell FROM Cards c
+				SELECT c.cardID, c.name, u.userID, us.amount, u.currency, c.cost FROM Cards c
                 INNER JOIN UserCard us  ON us.cardID = c.cardID
                 INNER JOIN Users u ON u.userID = us.userID
-                WHERE u.userID = @userid;
+                WHERE u.userID = @userid AND us.amount > 0;
 			`;
 
 			await ps.prepare(query);
@@ -55,11 +55,11 @@ module.exports = {
 					.setTitle(`${user.username}'s Inventory`)
 					.setDescription(`Page ${page + 1} of ${totalPages}`)
 					.setThumbnail(avatarURL) // Use user's avatar instead of icon
-					.addFields({ name: `Currency: ${cards[0].currency}`, value: '' });
+					.addFields({ name: `Currency: ${cards[0].currency} Coins`, value: '' });
 
 				currentCards.forEach((card) => {
 					embed.addFields({
-						name: `ID: ${card.cardID}, Name: ${card.name}, Amount: ${card.amount}, Sell: ${card.sell}`,
+						name: `ID: ${card.cardID}, Name: ${card.name}, Amount: ${card.amount}, Sell: ${card.cost/10}`,
 						value: '',
 						inline: false
 					});
@@ -111,13 +111,14 @@ module.exports = {
 
 					if (showEmbedCooldown.has(id)) {
 						return i.update({ content: 'You are on cooldown. Please wait before using this again.' });
-					}
-					showEmbedCooldown.add(id);
-                    setTimeout(() => showEmbedCooldown.delete(id), 30_000);
+					} else {
+						await collector.stop(); // Stop the collector to prevent multiple interactions
+						showEmbedCooldown.add(id);
+						setTimeout(() => showEmbedCooldown.delete(id), 30_000);
 
-					collector.stop(); // Stop the collector to prevent multiple interactions
-					const showEmbed = require('../../data/embeds/showEmbed.js');
-					return await showEmbed.execute(i);
+						const showEmbed = require('../../data/embeds/showEmbed.js');
+						return await showEmbed.execute(i);
+					}			
 				}
 
 				const updatedEmbed = createEmbed(currentPage);
@@ -125,10 +126,10 @@ module.exports = {
 			});
 
 			collector.on('end', async () => {
-				const disabledButtons = createButtons().components.map(button => button.setDisabled(true));
+				await interaction.editReply({ components: [] });
 			});
 		} catch (err) {
-			createButtons().components.forEach(button => button.setDisabled(true));
+			await interaction.editReply({ components: [] });
 		}
 	}
 };

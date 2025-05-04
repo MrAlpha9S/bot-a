@@ -14,16 +14,33 @@ module.exports = {
 
             const inventoryButton = new ButtonBuilder()
                 .setCustomId('inventory')
-                .setLabel('Inventory')
+                .setLabel('Inventory').setDisabled(false)
+                .setStyle(ButtonStyle.Primary);
+
+            const packButton = new ButtonBuilder()
+                .setCustomId('packs')
+                .setLabel('Packs').setDisabled(false)
                 .setStyle(ButtonStyle.Primary);
 
             const teamButton = new ButtonBuilder()
                 .setCustomId('team')
-                .setLabel('Team')
+                .setLabel('Team').setDisabled(false)
                 .setStyle(ButtonStyle.Primary);
 
-            const rowMain = new ActionRowBuilder()
-                .addComponents(inventoryButton, teamButton);
+            const shopButton = new ButtonBuilder()
+                .setCustomId('shop')
+                .setLabel('Shop').setDisabled(false)
+                .setStyle(ButtonStyle.Primary); 
+                
+            const battleButton = new ButtonBuilder()
+                .setCustomId('battle')
+                .setLabel('Battle').setDisabled(false)
+                .setStyle(ButtonStyle.Primary);
+
+            const row1 = new ActionRowBuilder()
+                .addComponents(inventoryButton, packButton, teamButton);
+            const row2 = new ActionRowBuilder()
+                .addComponents(shopButton);
 
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
@@ -35,7 +52,7 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: `${userid}`, iconURL: avatarURL });
 
-            var reply = await interaction.reply({ embeds: [embed], components: [rowMain] });
+            var reply = await interaction.reply({ embeds: [embed], components: [row1, row2] });
 
 
             const filter = i => i.user.id === interaction.user.id;
@@ -49,6 +66,7 @@ module.exports = {
 
             collector.on('collect', async i => {
                 if (i.customId === 'inventory') {
+                    collector.stop(); // Stop the collector when a button is clicked
                     const inventoryEmbed = require('../../data/embeds/inventoryEmbed.js');
                     return await inventoryEmbed.execute(i);
                 } else if( i.customId === 'team') {
@@ -57,14 +75,11 @@ module.exports = {
                 }
             });
 
-            collector.on('end', collected => {
-                // Disable buttons after timeout
-                inventoryButton.setDisabled(true);
-                teamButton.setDisabled(true);
+            collector.on('end', async () => {
+                await interaction.editReply({ components: [] });
             });
         } catch (error) {
-            inventoryButton.setDisabled(true);
-            teamButton.setDisabled(true);
+            await interaction.editReply({ components: [] });
         }
     },
 };
